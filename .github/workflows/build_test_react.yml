@@ -1,50 +1,31 @@
 name: NodeJS CI
+
 on: [push]
 
 jobs:
-  build:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        node-version: [20.x]
+ build:
+   runs-on: windows-latest
+   strategy:
+     matrix:
+       node-version: [18.x]
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+   steps:
+     - name: Checkout repository
+       uses: actions/checkout@v4
+     - name: Use Node.js ${{ matrix.node-version }}
+       uses: actions/setup-node@v2
+       with:
+         node-version: ${{ matrix.node-version }}
+     - name: Unit checks
+       run: |
+         npm ci
+         npm test
+     - name: E2E checks
+       run: |
+         npm start &
+         sleep 10
+         npx wdio run ./wdio.conf.js
+     - name: Build production artifacts
+       run: |
+         npm run build --if-present
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-
-      # 🔒 Pin npm to avoid lockfile mismatch
-      - name: Use stable npm
-        run: npm i -g npm@10.2.4
-
-      # 🧪 Debug what CI actually sees (temporary but VERY useful)
-      - name: Debug environment
-        run: |
-          node -v
-          npm -v
-          type package.json
-
-      # 📦 Install exactly like CI expects
-      - name: Install dependencies
-        run: npm ci
-
-      # ✅ Unit tests (non-interactive)
-      - name: Unit checks
-        run: npm test -- --watch=false
-
-      # 🌐 E2E tests (Windows-compatible)
-      - name: E2E checks
-        shell: pwsh
-        run: |
-          Start-Process -NoNewWindow npm -ArgumentList "run start-mockless"
-          Start-Sleep -Seconds 15
-          npx wdio run ./wdio.conf.ts
-
-      # 🏗️ Build
-      - name: Build production artifacts
-        run: npm run build --if-present
