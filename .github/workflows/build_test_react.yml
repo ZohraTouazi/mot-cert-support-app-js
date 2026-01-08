@@ -35,4 +35,14 @@ jobs:
           files: |
            junit.xml
            reports/e2e-report/*.xml
+     - name: Show Node & npm versions
+       run: |
+        node -v
+        npm -v
+
+     - name: Pin npm to 10.8.2
+       run: npm i -g npm@10.8.2
+
+     - name: Show pinned npm version
+       run: npm -v
 
